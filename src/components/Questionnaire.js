@@ -397,24 +397,29 @@ const Questionnaire = () => {
   };
 
   // Функция для фильтрации рецептов по ограничениям
-  const filterRecipesByRestrictions = (recipes, restrictions, goal) => {
-    return recipes.filter(recipe => {
-      // Проверка на веганство
-      if (restrictions.vegan && !recipe.vegan) return false;
-      
-      // Проверка на аллергии
-      if (recipe.allergies.some(allergy => restrictions.allergies.includes(allergy))) return false;
-      
-      // Проверка на диабет (для диабетиков исключаем блюда с высоким ГИ)
-      if (restrictions.diabetes && recipe.diabetes === 'high') return false;
-      
-      // Корректировка калорийности в зависимости от цели
-      if (goal === 'weightLoss' && recipe.calories > 500) return false;
-      if (goal === 'weightGain' && recipe.calories < 400) return false;
-      
-      return true;
-    });
-  };
+  // Функция для фильтрации рецептов по ограничениям
+const filterRecipesByRestrictions = (recipes, restrictions, goal) => {
+  // Защита от undefined
+  if (!restrictions) return recipes;
+  
+  return recipes.filter(recipe => {
+    // Проверка на веганство
+    if (restrictions.vegan && !recipe.vegan) return false;
+    
+    // Проверка на аллергии (с защитой от undefined)
+    if (recipe.allergies && restrictions.allergies && 
+        recipe.allergies.some(allergy => restrictions.allergies.includes(allergy))) return false;
+    
+    // Проверка на диабет
+    if (restrictions.diabetes && recipe.diabetes === 'high') return false;
+    
+    // Корректировка калорийности в зависимости от цели
+    if (goal === 'weightLoss' && recipe.calories > 500) return false;
+    if (goal === 'weightGain' && recipe.calories < 400) return false;
+    
+    return true;
+  });
+};
 
   // Генерация недельного меню
   const generateMealPlan = (restrictions, goal) => {
@@ -481,7 +486,10 @@ const Questionnaire = () => {
   };
 
   const getRecommendations = (goal, restrictions) => {
-    const recommendations = {
+  // Защита от undefined
+  if (!restrictions) restrictions = { diabetes: false, vegan: false, allergies: [] };
+  
+  const recommendations = {
       weightLoss: [
         'Увеличьте потребление белка для сохранения мышечной массы',
         'Ешьте больше овощей и клетчатки',
