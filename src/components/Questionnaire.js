@@ -6,7 +6,6 @@ import WaterTracker from './WaterTracker';
 import RecipeDetails from './RecipeDetails';
 import ExportMenu from './ExportMenu';
 
-
 const Container = styled.div`
   max-width: 900px;
   margin: 50px auto;
@@ -170,37 +169,6 @@ const HistoryItem = styled.div`
   }
 `;
 
-/*const TabContainer = styled.div`
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  justify-content: center;
-`; */
-
-/*const Tab = styled.button`
-  padding: 10px 20px;
-  background: ${props => props.active ? '#2E7D32' : '#f0f0f0'};
-  color: ${props => props.active ? 'white' : '#333'};
-  border: none;
-  border-radius: 8px;
-  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-  opacity: ${props => props.disabled ? 0.5 : 1};
-  font-weight: bold;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  
-  &:hover {
-    background: ${props => {
-      if (props.disabled) return '#f0f0f0';
-      return props.active ? '#1B5E20' : '#e0e0e0';
-    }};
-    transform: ${props => props.disabled ? 'none' : 'translateY(-2px)'};
-  }
-`; */
-
 const RecommendationList = styled.ul`
   list-style: none;
   padding: 0;
@@ -274,29 +242,6 @@ const Chip = styled.span`
   }
 `;
 
-// Компонент для защищённого контента (требует авторизации)
-const ProtectedContent = ({ children, isLoggedIn, title }) => {
-  if (!isLoggedIn) {
-    return (
-      <div style={{ textAlign: 'center', padding: '50px', background: '#F5F5F5', borderRadius: '15px' }}>
-        <h3 style={{ color: '#F57C00' }}>🔒 Доступ ограничен</h3>
-        <p>Чтобы использовать "{title}", пожалуйста, войдите или зарегистрируйтесь</p>
-        <p style={{ marginTop: '20px' }}>
-          <button 
-            onClick={() => window.location.href = '/login'}
-            style={{ padding: '10px 20px', background: '#2E7D32', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginRight: '10px' }}
-          >Войти</button>
-          <button 
-            onClick={() => window.location.href = '/register'}
-            style={{ padding: '10px 20px', background: '#F57C00', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-          >Регистрация</button>
-        </p>
-      </div>
-    );
-  }
-  return children;
-};
-
 const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
   const [step, setStep] = useState(1);
   const [activeTab, setActiveTab] = useState('result');
@@ -322,8 +267,11 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
   const [mealPlan, setMealPlan] = useState(null);
 
   useEffect(() => {
-  filterRecipes();
-}, [restrictions, goal, searchTerm, filterRecipes]);
+    const savedHistory = localStorage.getItem('calorieHistory');
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
+  }, []);
 
   const saveToHistory = (data) => {
     const newHistory = [data, ...history].slice(0, 10);
@@ -409,7 +357,6 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
 
   const filterRecipesByRestrictions = (recipes, restrictions, goal) => {
     if (!restrictions) return recipes;
-    
     return recipes.filter(recipe => {
       if (restrictions.vegan && !recipe.vegan) return false;
       if (recipe.allergies && restrictions.allergies && 
@@ -538,65 +485,63 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
   };
 
   const calculateCalories = (e) => {
-  e.preventDefault();
-  
-  const weight = parseFloat(formData.currentWeight);
-  const height = parseFloat(formData.height);
-  const age = parseFloat(formData.age);
-  
-  let bmr;
-  if (formData.gender === 'male') {
-    bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
-  } else {
-    bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
-  }
-  
-  const activityMultipliers = {
-    'low': 1.2,
-    'medium': 1.375,
-    'high': 1.55
+    e.preventDefault();
+    
+    const weight = parseFloat(formData.currentWeight);
+    const height = parseFloat(formData.height);
+    const age = parseFloat(formData.age);
+    
+    let bmr;
+    if (formData.gender === 'male') {
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+    } else {
+      bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+    }
+    
+    const activityMultipliers = {
+      'low': 1.2,
+      'medium': 1.375,
+      'high': 1.55
+    };
+    
+    const maintenance = bmr * (activityMultipliers[formData.activity] || 1.2);
+    
+    let goalCalories = maintenance;
+    if (formData.goal === 'weightLoss') {
+      goalCalories = maintenance - 500;
+    } else if (formData.goal === 'weightGain') {
+      goalCalories = maintenance + 500;
+    }
+    
+    const macros = calculateMacros(goalCalories, formData.goal);
+    
+    const weightDiff = parseFloat(formData.desiredWeight) - weight;
+    const progressPercentage = weightDiff > 0 
+      ? (weight / formData.desiredWeight) * 100
+      : (formData.desiredWeight / weight) * 100;
+    
+    const newMealPlan = generateMealPlan(formData.restrictions, formData.goal);
+    setMealPlan(newMealPlan);
+    
+    const newResult = {
+      maintenance: Math.round(maintenance),
+      goal: Math.round(goalCalories),
+      bmr: Math.round(bmr),
+      macros,
+      progressPercentage,
+      weightDiff,
+      ...formData,
+      date: new Date().toLocaleDateString()
+    };
+    
+    setResult(newResult);
+    saveToHistory(newResult);
+    setStep(2);
+    
+    if (onResultCalculated) {
+      onResultCalculated(newResult, newMealPlan);
+    }
   };
-  
-  const maintenance = bmr * (activityMultipliers[formData.activity] || 1.2);
-  
-  let goalCalories = maintenance;
-  if (formData.goal === 'weightLoss') {
-    goalCalories = maintenance - 500;
-  } else if (formData.goal === 'weightGain') {
-    goalCalories = maintenance + 500;
-  }
-  
-  const macros = calculateMacros(goalCalories, formData.goal);
-  
-  const weightDiff = parseFloat(formData.desiredWeight) - weight;
-  const progressPercentage = weightDiff > 0 
-    ? (weight / formData.desiredWeight) * 100
-    : (formData.desiredWeight / weight) * 100;
-  
-  // Генерируем меню на основе ограничений
-  const newMealPlan = generateMealPlan(formData.restrictions, formData.goal);
-  setMealPlan(newMealPlan);
-  
-  const newResult = {
-    maintenance: Math.round(maintenance),
-    goal: Math.round(goalCalories),
-    bmr: Math.round(bmr),
-    macros,
-    progressPercentage,
-    weightDiff,
-    ...formData,
-    date: new Date().toLocaleDateString()
-  };
-  
-  setResult(newResult);
-  saveToHistory(newResult);
-  setStep(2);
-  
-  // ПЕРЕДАЁМ ДАННЫЕ В APP.JS (родительский компонент)
-  if (onResultCalculated) {
-    onResultCalculated(newResult, newMealPlan);
-  }
-};
 
   const resetForm = () => {
     setStep(1);
@@ -622,24 +567,23 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
   };
 
   const loadFromHistory = (item) => {
-  const newMealPlan = generateMealPlan(item.restrictions, item.goal);
-  setResult(item);
-  setMealPlan(newMealPlan);
-  setStep(2);
-  setActiveTab('result');
-  
-  // Передаём данные в App.js
-  if (onResultCalculated) {
-    onResultCalculated(item, newMealPlan);
-  }
-};
+    const newMealPlan = generateMealPlan(item.restrictions, item.goal);
+    setResult(item);
+    setMealPlan(newMealPlan);
+    setStep(2);
+    setActiveTab('result');
+    
+    if (onResultCalculated) {
+      onResultCalculated(item, newMealPlan);
+    }
+  };
 
   // Определяем, какие вкладки доступны без авторизации
   const publicTabs = ['result', 'recommendations'];
   
-  /*const isTabDisabled = (tabId) => {
+  const isTabDisabled = (tabId) => {
     return !publicTabs.includes(tabId) && !isLoggedIn;
-  };*/
+  };
 
   if (step === 2 && result) {
     const recommendations = getRecommendations(result.goal, result.restrictions);
@@ -647,6 +591,7 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
     return (
       <Container>
         <Title>Результаты для {result.name}</Title>
+        
         {activeTab === 'result' && (
           <ResultContainer>
             <h2>Ваша цель: {
@@ -705,87 +650,75 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
         )}
         
         {activeTab === 'statistics' && (
-          <ProtectedContent isLoggedIn={isLoggedIn} title="Статистика">
-            <Statistics 
-              userData={result} 
-              mealPlan={mealPlan}
-              diaryEntries={diaryEntries}
-            />
-          </ProtectedContent>
+          <Statistics 
+            userData={result} 
+            mealPlan={mealPlan}
+            diaryEntries={diaryEntries}
+          />
         )}
         
         {activeTab === 'diary' && (
-          <ProtectedContent isLoggedIn={isLoggedIn} title="Дневник питания">
-            <FoodDiary 
-              userData={result}
-              mealPlan={mealPlan}
-            />
-          </ProtectedContent>
+          <FoodDiary 
+            userData={result}
+            mealPlan={mealPlan}
+          />
         )}
         
         {activeTab === 'water' && (
-          <ProtectedContent isLoggedIn={isLoggedIn} title="Трекер воды">
-            <WaterTracker userData={result} />
-          </ProtectedContent>
+          <WaterTracker userData={result} />
         )}
         
         {activeTab === 'recipes' && (
-          <ProtectedContent isLoggedIn={isLoggedIn} title="Рецепты">
-            <RecipeDetails 
-              restrictions={result.restrictions}
-              goal={result.goal}
-            />
-          </ProtectedContent>
+          <RecipeDetails 
+            restrictions={result.restrictions}
+            goal={result.goal}
+          />
         )}
         
         {activeTab === 'mealplan' && mealPlan && (
-          <ProtectedContent isLoggedIn={isLoggedIn} title="Меню">
-            <ResultContainer>
-              <h2>Ваше персональное меню на неделю</h2>
-              <p>Учтены ваши ограничения: {
-                result.restrictions.vegan && 'Веганство '
-              }{
-                result.restrictions.diabetes && 'Диабет '
-              }{
-                result.restrictions.allergies.length > 0 && `Аллергии на: ${result.restrictions.allergies.join(', ')}`
-              }</p>
-              <MealPlanContainer>
-                {Object.entries(mealPlan).map(([day, meals]) => (
-                  <DayCard key={day}>
-                    <h3>{day}</h3>
-                    <MealItem>
-                      <strong>Завтрак:</strong>
-                      <p>{meals.breakfast.name} ({meals.breakfast.calories} ккал)</p>
-                    </MealItem>
-                    <MealItem>
-                      <strong>Обед:</strong>
-                      <p>{meals.lunch.name} ({meals.lunch.calories} ккал)</p>
-                    </MealItem>
-                    <MealItem>
-                      <strong>Полдник:</strong>
-                      <p>{meals.snack.name} ({meals.snack.calories} ккал)</p>
-                    </MealItem>
-                    <MealItem>
-                      <strong>Ужин:</strong>
-                      <p>{meals.dinner.name} ({meals.dinner.calories} ккал)</p>
-                    </MealItem>
-                  </DayCard>
-                ))}
-              </MealPlanContainer>
-              <Button onClick={() => setMealPlan(generateMealPlan(result.restrictions, result.goal))}>
-                Сгенерировать новое меню
-              </Button>
-            </ResultContainer>
-          </ProtectedContent>
+          <ResultContainer>
+            <h2>Ваше персональное меню на неделю</h2>
+            <p>Учтены ваши ограничения: {
+              result.restrictions.vegan && 'Веганство '
+            }{
+              result.restrictions.diabetes && 'Диабет '
+            }{
+              result.restrictions.allergies.length > 0 && `Аллергии на: ${result.restrictions.allergies.join(', ')}`
+            }</p>
+            <MealPlanContainer>
+              {Object.entries(mealPlan).map(([day, meals]) => (
+                <DayCard key={day}>
+                  <h3>{day}</h3>
+                  <MealItem>
+                    <strong>Завтрак:</strong>
+                    <p>{meals.breakfast.name} ({meals.breakfast.calories} ккал)</p>
+                  </MealItem>
+                  <MealItem>
+                    <strong>Обед:</strong>
+                    <p>{meals.lunch.name} ({meals.lunch.calories} ккал)</p>
+                  </MealItem>
+                  <MealItem>
+                    <strong>Полдник:</strong>
+                    <p>{meals.snack.name} ({meals.snack.calories} ккал)</p>
+                  </MealItem>
+                  <MealItem>
+                    <strong>Ужин:</strong>
+                    <p>{meals.dinner.name} ({meals.dinner.calories} ккал)</p>
+                  </MealItem>
+                </DayCard>
+              ))}
+            </MealPlanContainer>
+            <Button onClick={() => setMealPlan(generateMealPlan(result.restrictions, result.goal))}>
+              Сгенерировать новое меню
+            </Button>
+          </ResultContainer>
         )}
         
         {activeTab === 'export' && (
-          <ProtectedContent isLoggedIn={isLoggedIn} title="Экспорт">
-            <ExportMenu 
-              mealPlan={mealPlan}
-              userData={result}
-            />
-          </ProtectedContent>
+          <ExportMenu 
+            mealPlan={mealPlan}
+            userData={result}
+          />
         )}
         
         {activeTab === 'recommendations' && (
@@ -931,7 +864,7 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
 
         <FormGroup>
           <Label>Физическая активность</Label>
-                    <Select name="activity" value={formData.activity} onChange={handleChange} required>
+          <Select name="activity" value={formData.activity} onChange={handleChange} required>
             <option value="">Выберите уровень активности</option>
             <option value="low">Низкая (сидячая работа, мало движений)</option>
             <option value="medium">Средняя (тренировки 3-4 раза в неделю)</option>
