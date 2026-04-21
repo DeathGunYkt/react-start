@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { formatDate, getDaysOfWeek, calculateProgress } from '../utils/helpers';
+import { formatDate, calculateProgress, saveToLocalStorage, loadFromLocalStorage } from '../utils/helpers';
 
 const Container = styled.div`
   background: white;
@@ -23,7 +23,7 @@ const StatsGrid = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2E7D32 0%, #F57C00 100%);
   color: white;
   padding: 20px;
   border-radius: 10px;
@@ -51,7 +51,7 @@ const StatCard = styled.div`
 const ChartContainer = styled.div`
   margin: 30px 0;
   padding: 20px;
-  background: #f9f9f9;
+  background: #F5F5F5;
   border-radius: 8px;
 `;
 
@@ -68,7 +68,7 @@ const BarChart = styled.div`
 
 const Bar = styled.div`
   width: 40px;
-  background: ${props => props.color || '#4CAF50'};
+  background: ${props => props.color || '#2E7D32'};
   height: ${props => props.height}px;
   border-radius: 5px 5px 0 0;
   transition: height 0.3s ease;
@@ -147,14 +147,14 @@ const DateSelector = styled.div`
 
 const DateButton = styled.button`
   padding: 5px 10px;
-  background: ${props => props.active ? '#4CAF50' : '#f0f0f0'};
+  background: ${props => props.active ? '#2E7D32' : '#f0f0f0'};
   color: ${props => props.active ? 'white' : '#333'};
   border: none;
   border-radius: 5px;
   cursor: pointer;
   
   &:hover {
-    background: ${props => props.active ? '#45a049' : '#e0e0e0'};
+    background: ${props => props.active ? '#1B5E20' : '#e0e0e0'};
   }
 `;
 
@@ -169,7 +169,7 @@ const ProgressBar = styled.div`
 
 const Button = styled.button`
   padding: 10px 20px;
-  background-color: #4CAF50;
+  background-color: #2E7D32;
   color: white;
   border: none;
   border-radius: 8px;
@@ -178,7 +178,7 @@ const Button = styled.button`
   margin-top: 20px;
   
   &:hover {
-    background-color: #45a049;
+    background-color: #1B5E20;
   }
 `;
 
@@ -187,33 +187,29 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
   const [weightHistory, setWeightHistory] = useState([]);
 
   useEffect(() => {
-    // Загружаем историю веса из localStorage
-    const savedWeight = localStorage.getItem('weightHistory');
+    const savedWeight = loadFromLocalStorage('weightHistory');
     if (savedWeight) {
-      setWeightHistory(JSON.parse(savedWeight));
+      setWeightHistory(savedWeight);
     } else {
-      // Инициализируем с текущим весом
       const initial = [{
         date: new Date().toISOString(),
         weight: parseFloat(userData?.currentWeight || 0)
       }];
       setWeightHistory(initial);
-      localStorage.setItem('weightHistory', JSON.stringify(initial));
+      saveToLocalStorage('weightHistory', initial);
     }
   }, [userData?.currentWeight]);
 
-  // Добавление новой записи веса
   const addWeightEntry = (weight) => {
     const newEntry = {
       date: new Date().toISOString(),
       weight: parseFloat(weight)
     };
-    const updated = [newEntry, ...weightHistory].slice(0, 30); // храним 30 записей
+    const updated = [newEntry, ...weightHistory].slice(0, 30);
     setWeightHistory(updated);
-    localStorage.setItem('weightHistory', JSON.stringify(updated));
+    saveToLocalStorage('weightHistory', updated);
   };
 
-  // Расчет статистики
   const calculateStats = () => {
     if (!weightHistory || weightHistory.length === 0) return null;
     
@@ -223,10 +219,7 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
     const averageLoss = weightHistory.length > 1 ? totalLoss / weightHistory.length : 0;
     
     const targetDiff = parseFloat(userData?.currentWeight || 0) - parseFloat(userData?.desiredWeight || 0);
-    const progress = targetDiff !== 0 ? calculateProgress(
-      Math.abs(totalLoss),
-      Math.abs(targetDiff)
-    ) : 0;
+    const progress = targetDiff !== 0 ? calculateProgress(Math.abs(totalLoss), Math.abs(targetDiff)) : 0;
     
     return {
       startWeight: firstWeight.toFixed(1),
@@ -238,7 +231,6 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
     };
   };
 
-  // Расчет калорий по дням из дневника питания
   const getCaloriesByDay = () => {
     const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     const calories = [];
@@ -251,10 +243,8 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
       
       let dayCalories = 0;
       
-      // Проверяем, есть ли записи для этой даты в дневнике
       if (diaryEntries && diaryEntries[dateKey]) {
         const dayMeals = diaryEntries[dateKey];
-        // Суммируем калории из всех приемов пищи
         Object.values(dayMeals).forEach(meals => {
           if (Array.isArray(meals)) {
             meals.forEach(food => {
@@ -278,7 +268,6 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
   const weeklyCalories = getCaloriesByDay();
   const maxCalories = Math.max(...weeklyCalories.map(c => c.calories), userData?.goal || 2000);
 
-  // Данные для круговой диаграммы БЖУ
   const macros = userData?.macros || {
     protein: 0,
     fat: 0,
@@ -291,8 +280,8 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
   const carbsPercentage = total > 0 ? ((macros.carbs || 0) / total) * 100 : 34;
 
   const pieGradient = `conic-gradient(
-    #4CAF50 0% ${proteinPercentage}%,
-    #FFC107 ${proteinPercentage}% ${proteinPercentage + fatPercentage}%,
+    #2E7D32 0% ${proteinPercentage}%,
+    #F57C00 ${proteinPercentage}% ${proteinPercentage + fatPercentage}%,
     #2196F3 ${proteinPercentage + fatPercentage}% 100%
   )`;
 
@@ -301,22 +290,13 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
       <Title>Детальная статистика</Title>
       
       <DateSelector>
-        <DateButton 
-          active={timeRange === 'week'} 
-          onClick={() => setTimeRange('week')}
-        >
+        <DateButton active={timeRange === 'week'} onClick={() => setTimeRange('week')}>
           Неделя
         </DateButton>
-        <DateButton 
-          active={timeRange === 'month'} 
-          onClick={() => setTimeRange('month')}
-        >
+        <DateButton active={timeRange === 'month'} onClick={() => setTimeRange('month')}>
           Месяц
         </DateButton>
-        <DateButton 
-          active={timeRange === 'all'} 
-          onClick={() => setTimeRange('all')}
-        >
+        <DateButton active={timeRange === 'all'} onClick={() => setTimeRange('all')}>
           Всё время
         </DateButton>
       </DateSelector>
@@ -360,11 +340,7 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
             
             return (
               <div key={index} style={{ textAlign: 'center' }}>
-                <Bar 
-                  height={height} 
-                  value={`${entry.weight} кг`}
-                  color="#4CAF50"
-                />
+                <Bar height={height} value={`${entry.weight} кг`} color="#2E7D32" />
                 <DayLabel>{formatDate(entry.date).slice(0, 5)}</DayLabel>
               </div>
             );
@@ -383,7 +359,7 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
                 <Bar 
                   height={height} 
                   value={`${day.calories} ккал`}
-                  color={day.calories > day.target ? '#ff6b6b' : '#4CAF50'}
+                  color={day.calories > day.target ? '#ff6b6b' : '#2E7D32'}
                 />
                 <DayLabel>{day.day}</DayLabel>
               </div>
@@ -399,10 +375,10 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
         <h4>Соотношение БЖУ</h4>
         <PieChart gradient={pieGradient} />
         <Legend>
-          <LegendItem color="#4CAF50">
+          <LegendItem color="#2E7D32">
             <span /> Белки: {macros.protein || 0}г ({Math.round(proteinPercentage)}%)
           </LegendItem>
-          <LegendItem color="#FFC107">
+          <LegendItem color="#F57C00">
             <span /> Жиры: {macros.fat || 0}г ({Math.round(fatPercentage)}%)
           </LegendItem>
           <LegendItem color="#2196F3">
@@ -431,7 +407,7 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
                 style={{
                   width: `${stats.progress}%`,
                   height: '20px',
-                  background: 'linear-gradient(90deg, #4CAF50, #8BC34A)',
+                  background: 'linear-gradient(90deg, #2E7D32, #F57C00)',
                   borderRadius: '10px',
                   transition: 'width 0.3s ease'
                 }}
@@ -441,7 +417,6 @@ const Statistics = ({ userData, mealPlan, diaryEntries }) => {
         )}
       </ChartContainer>
 
-      {/* Кнопка для добавления нового веса */}
       <Button onClick={() => {
         const newWeight = prompt('Введите текущий вес (кг):', userData?.currentWeight);
         if (newWeight) addWeightEntry(newWeight);

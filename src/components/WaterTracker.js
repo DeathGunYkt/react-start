@@ -18,7 +18,7 @@ const Title = styled.h3`
 const WaterGlass = styled.div`
   width: 150px;
   height: 250px;
-  border: 3px solid #4CAF50;
+  border: 3px solid #2E7D32;
   border-radius: 0 0 30px 30px;
   margin: 20px auto;
   position: relative;
@@ -32,7 +32,7 @@ const WaterFill = styled.div`
   left: 0;
   width: 100%;
   height: ${props => props.percentage}%;
-  background: linear-gradient(180deg, #4CAF50 0%, #2196F3 100%);
+  background: linear-gradient(180deg, #2E7D32 0%, #F57C00 100%);
   transition: height 0.5s ease;
   display: flex;
   align-items: center;
@@ -51,7 +51,7 @@ const StatsContainer = styled.div`
 
 const StatBox = styled.div`
   padding: 15px;
-  background: #f9f9f9;
+  background: #F5F5F5;
   border-radius: 8px;
   
   h4 {
@@ -61,10 +61,33 @@ const StatBox = styled.div`
   }
   
   p {
-    color: #4CAF50;
+    color: #2E7D32;
     font-size: 24px;
     font-weight: bold;
     margin: 0;
+  }
+`;
+
+const QuickAddContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+`;
+
+const QuickButton = styled.button`
+  padding: 10px 15px;
+  background: #e0f2e0;
+  border: 2px solid #2E7D32;
+  border-radius: 20px;
+  color: #2E7D32;
+  font-weight: bold;
+  cursor: pointer;
+  
+  &:hover {
+    background: #2E7D32;
+    color: white;
   }
 `;
 
@@ -78,7 +101,7 @@ const ButtonGroup = styled.div`
 
 const ActionButton = styled.button`
   padding: 12px 25px;
-  background: ${props => props.danger ? '#ff6b6b' : '#4CAF50'};
+  background: ${props => props.danger ? '#ff6b6b' : '#2E7D32'};
   color: white;
   border: none;
   border-radius: 25px;
@@ -89,29 +112,7 @@ const ActionButton = styled.button`
   gap: 5px;
   
   &:hover {
-    background: ${props => props.danger ? '#ff5252' : '#45a049'};
-  }
-`;
-
-const QuickAddContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin: 15px 0;
-`;
-
-const QuickButton = styled.button`
-  padding: 10px 15px;
-  background: #e0f2e0;
-  border: 2px solid #4CAF50;
-  border-radius: 20px;
-  color: #4CAF50;
-  font-weight: bold;
-  cursor: pointer;
-  
-  &:hover {
-    background: #4CAF50;
-    color: white;
+    background: ${props => props.danger ? '#ff5252' : '#1B5E20'};
   }
 `;
 
@@ -132,40 +133,43 @@ const HistoryItem = styled.div`
   }
   
   span:last-child {
-    color: #4CAF50;
+    color: #2E7D32;
     font-weight: bold;
   }
 `;
 
 const WaterTracker = ({ userData }) => {
   const [waterIntake, setWaterIntake] = useState(0);
-  const [dailyGoal, setDailyGoal] = useState(2000); // мл
+  const [dailyGoal, setDailyGoal] = useState(2000);
   const [history, setHistory] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(new Date().toDateString());
 
+  const addToHistory = (amount, date) => {
+    const newHistory = [
+      { date, amount, goal: dailyGoal },
+      ...history
+    ].slice(0, 30);
+    setHistory(newHistory);
+  };
+
   useEffect(() => {
-    // Загружаем данные из localStorage
     const saved = loadFromLocalStorage('waterTracker');
     if (saved) {
-      // Проверяем, не новый ли день
       if (saved.date === new Date().toDateString()) {
         setWaterIntake(saved.intake);
       } else {
-        // Новый день - сохраняем в историю и обнуляем
         addToHistory(saved.intake, saved.date);
         setWaterIntake(0);
       }
       setHistory(saved.history || []);
     }
 
-    // Рассчитываем норму воды на основе веса (30-40 мл на кг)
-    if (userData.currentWeight) {
+    if (userData?.currentWeight) {
       const calculatedGoal = Math.round(parseFloat(userData.currentWeight) * 35);
       setDailyGoal(calculatedGoal);
     }
-  }, [userData.currentWeight]);
+  }, [userData?.currentWeight]);
 
-  // Сохраняем данные при изменении
   useEffect(() => {
     saveToLocalStorage('waterTracker', {
       intake: waterIntake,
@@ -174,19 +178,10 @@ const WaterTracker = ({ userData }) => {
     });
   }, [waterIntake, history]);
 
-  const addToHistory = (amount, date) => {
-    const newHistory = [
-      { date, amount, goal: dailyGoal },
-      ...history
-    ].slice(0, 30); // храним 30 дней
-    setHistory(newHistory);
-  };
-
   const addWater = (amount) => {
     const newIntake = waterIntake + amount;
     setWaterIntake(newIntake);
     
-    // Проверяем, не достигли ли цели
     if (newIntake >= dailyGoal && waterIntake < dailyGoal) {
       alert('🎉 Поздравляем! Вы выполнили дневную норму воды!');
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -14,6 +14,20 @@ const Title = styled.h3`
   text-align: center;
 `;
 
+const SearchBar = styled.input`
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  
+  &:focus {
+    outline: none;
+    border-color: #2E7D32;
+  }
+`;
+
 const RecipeGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -22,7 +36,7 @@ const RecipeGrid = styled.div`
 `;
 
 const RecipeCard = styled.div`
-  background: #f9f9f9;
+  background: #F5F5F5;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -37,7 +51,7 @@ const RecipeCard = styled.div`
 
 const RecipeImage = styled.div`
   height: 150px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2E7D32 0%, #F57C00 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,7 +85,7 @@ const TagContainer = styled.div`
 const Tag = styled.span`
   padding: 3px 8px;
   background: ${props => props.color || '#e0f2e0'};
-  color: ${props => props.textColor || '#4CAF50'};
+  color: ${props => props.textColor || '#2E7D32'};
   border-radius: 12px;
   font-size: 12px;
 `;
@@ -118,7 +132,7 @@ const Section = styled.div`
   margin: 20px 0;
   
   h5 {
-    color: #4CAF50;
+    color: #2E7D32;
     margin-bottom: 10px;
     font-size: 18px;
   }
@@ -155,7 +169,7 @@ const NutritionTable = styled.div`
 const NutritionItem = styled.div`
   text-align: center;
   padding: 10px;
-  background: #f9f9f9;
+  background: #F5F5F5;
   border-radius: 8px;
   
   span {
@@ -167,7 +181,7 @@ const NutritionItem = styled.div`
     }
     
     &:last-child {
-      color: #4CAF50;
+      color: #F57C00;
       font-weight: bold;
       font-size: 18px;
     }
@@ -176,7 +190,7 @@ const NutritionItem = styled.div`
 
 const Button = styled.button`
   padding: 10px 20px;
-  background: #4CAF50;
+  background: #2E7D32;
   color: white;
   border: none;
   border-radius: 8px;
@@ -185,25 +199,10 @@ const Button = styled.button`
   margin-right: 10px;
   
   &:hover {
-    background: #45a049;
+    background: #1B5E20;
   }
 `;
 
-const SearchBar = styled.input`
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-  margin-bottom: 20px;
-  
-  &:focus {
-    outline: none;
-    border-color: #4CAF50;
-  }
-`;
-
-// Расширенная база рецептов
 const recipeDatabase = [
   {
     id: 1,
@@ -218,19 +217,8 @@ const recipeDatabase = [
     vegan: true,
     allergies: [],
     diabetes: 'medium',
-    ingredients: [
-      'Овсяные хлопья - 50г',
-      'Молоко (или растительное) - 200мл',
-      'Ягоды (свежие или замороженные) - 100г',
-      'Мед - 1 ч.л.',
-      'Корица - по вкусу'
-    ],
-    instructions: [
-      'В кастрюлю налейте молоко и доведите до кипения',
-      'Всыпьте овсяные хлопья, уменьшите огонь и варите 5-7 минут, помешивая',
-      'Добавьте ягоды и варите еще 2-3 минуты',
-      'Подавайте с медом и корицей'
-    ]
+    ingredients: ['Овсяные хлопья - 50г', 'Молоко - 200мл', 'Ягоды - 100г', 'Мед - 1 ч.л.', 'Корица - по вкусу'],
+    instructions: ['В кастрюлю налейте молоко и доведите до кипения', 'Всыпьте овсяные хлопья, варите 5-7 минут', 'Добавьте ягоды, варите еще 2-3 минуты', 'Подавайте с медом и корицей']
   },
   {
     id: 2,
@@ -245,107 +233,8 @@ const recipeDatabase = [
     vegan: false,
     allergies: [],
     diabetes: 'low',
-    ingredients: [
-      'Куриная грудка - 200г',
-      'Гречка - 100г',
-      'Лук - 1 шт',
-      'Морковь - 1 шт',
-      'Растительное масло - 1 ст.л.',
-      'Соль, перец - по вкусу'
-    ],
-    instructions: [
-      'Гречку промойте и залейте водой (1:2), варите 20 минут',
-      'Куриную грудку нарежьте кубиками, обжарьте на масле 5-7 минут',
-      'Добавьте мелко нарезанные лук и морковь, жарьте еще 5 минут',
-      'Смешайте с готовой гречкой, посолите, поперчите'
-    ]
-  },
-  {
-    id: 3,
-    name: 'Смузи боул с гранолой',
-    image: '🥥',
-    calories: 380,
-    protein: 10,
-    fat: 15,
-    carbs: 55,
-    time: 10,
-    difficulty: 'Легко',
-    vegan: true,
-    allergies: ['орехи'],
-    diabetes: 'low',
-    ingredients: [
-      'Банан - 1 шт',
-      'Замороженные ягоды - 100г',
-      'Растительное молоко - 100мл',
-      'Гранола - 30г',
-      'Семена чиа - 1 ст.л.',
-      'Кокосовая стружка - для украшения'
-    ],
-    instructions: [
-      'В блендере смешайте банан, ягоды и молоко до однородной массы',
-      'Перелейте в миску',
-      'Сверху посыпьте гранолой, семенами чиа и кокосовой стружкой',
-      'Подавайте сразу'
-    ]
-  },
-  {
-    id: 4,
-    name: 'Лосось с овощами гриль',
-    image: '🐟',
-    calories: 520,
-    protein: 35,
-    fat: 28,
-    carbs: 30,
-    time: 25,
-    difficulty: 'Средне',
-    vegan: false,
-    allergies: ['рыба'],
-    diabetes: 'low',
-    ingredients: [
-      'Филе лосося - 200г',
-      'Кабачок - 1 шт',
-      'Болгарский перец - 1 шт',
-      'Спаржа - 100г',
-      'Оливковое масло - 2 ст.л.',
-      'Лимон, соль, перец - по вкусу'
-    ],
-    instructions: [
-      'Рыбу посолите, поперчите, сбрызните лимонным соком',
-      'Овощи нарежьте крупными кусками, сбрызните маслом',
-      'Обжарьте на гриле или сковороде рыбу по 4-5 минут с каждой стороны',
-      'Овощи жарьте до готовности (около 10 минут)',
-      'Подавайте с долькой лимона'
-    ]
-  },
-  {
-    id: 5,
-    name: 'Тофу с овощами в азиатском стиле',
-    image: '🥢',
-    calories: 400,
-    protein: 25,
-    fat: 22,
-    carbs: 35,
-    time: 20,
-    difficulty: 'Средне',
-    vegan: true,
-    allergies: ['соя', 'кунжут'],
-    diabetes: 'low',
-    ingredients: [
-      'Тофу твердый - 200г',
-      'Брокколи - 150г',
-      'Морковь - 1 шт',
-      'Соевый соус - 2 ст.л.',
-      'Кунжутное масло - 1 ч.л.',
-      'Кунжут - для посыпки',
-      'Имбирь, чеснок - по вкусу'
-    ],
-    instructions: [
-      'Тофу нарежьте кубиками, обжарьте до золотистой корочки',
-      'Овощи нарежьте и обжарьте 5-7 минут',
-      'Смешайте соевый соус, масло, имбирь и чеснок',
-      'Залейте соусом овощи с тофу, тушите 3 минуты',
-      'Посыпьте кунжутом перед подачей'
-    ]
+    ingredients: ['Куриная грудка - 200г', 'Гречка - 100г', 'Лук - 1 шт', 'Морковь - 1 шт', 'Масло - 1 ст.л.', 'Соль, перец'],
+    instructions: ['Гречку промойте и варите 20 минут', 'Курицу нарежьте, обжарьте 5-7 минут', 'Добавьте лук и морковь, жарьте еще 5 минут', 'Смешайте с гречкой']
   }
 ];
 
@@ -354,35 +243,29 @@ const RecipeDetails = ({ restrictions, goal }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRecipes, setFilteredRecipes] = useState(recipeDatabase);
 
-  // Фильтрация рецептов по ограничениям и поиску
   const filterRecipes = () => {
     let filtered = recipeDatabase;
 
-    // Фильтр по веганству
     if (restrictions?.vegan) {
       filtered = filtered.filter(r => r.vegan);
     }
 
-    // Фильтр по аллергиям
     if (restrictions?.allergies?.length) {
       filtered = filtered.filter(r => 
         !r.allergies.some(allergy => restrictions.allergies.includes(allergy))
       );
     }
 
-    // Фильтр по диабету
     if (restrictions?.diabetes) {
       filtered = filtered.filter(r => r.diabetes !== 'high');
     }
 
-    // Фильтр по калориям в зависимости от цели
     if (goal === 'weightLoss') {
       filtered = filtered.filter(r => r.calories < 450);
     } else if (goal === 'weightGain') {
       filtered = filtered.filter(r => r.calories > 450);
     }
 
-    // Поиск по названию
     if (searchTerm) {
       filtered = filtered.filter(r => 
         r.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -392,7 +275,7 @@ const RecipeDetails = ({ restrictions, goal }) => {
     setFilteredRecipes(filtered);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     filterRecipes();
   }, [restrictions, goal, searchTerm]);
 
@@ -419,14 +302,10 @@ const RecipeDetails = ({ restrictions, goal }) => {
                 <span>📊 {recipe.difficulty}</span>
               </RecipeMeta>
               <TagContainer>
-                {recipe.vegan && <Tag color="#e0f2e0" textColor="#4CAF50">🌱 Веган</Tag>}
+                {recipe.vegan && <Tag color="#e0f2e0" textColor="#2E7D32">🌱 Веган</Tag>}
                 {recipe.allergies.map(allergy => (
-                  <Tag key={allergy} color="#ffebee" textColor="#f44336">
-                    🚫 {allergy}
-                  </Tag>
+                  <Tag key={allergy} color="#ffebee" textColor="#f44336">🚫 {allergy}</Tag>
                 ))}
-                {recipe.diabetes === 'low' && <Tag color="#e3f2fd" textColor="#2196F3">✅ Для диабетиков</Tag>}
-                {recipe.diabetes === 'medium' && <Tag color="#fff3e0" textColor="#FF9800">⚠️ С осторожностью</Tag>}
               </TagContainer>
             </RecipeInfo>
           </RecipeCard>
@@ -436,7 +315,6 @@ const RecipeDetails = ({ restrictions, goal }) => {
       {filteredRecipes.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <p>😕 Нет рецептов, соответствующих вашим ограничениям</p>
-          <p>Попробуйте изменить параметры поиска</p>
         </div>
       )}
 
@@ -444,49 +322,21 @@ const RecipeDetails = ({ restrictions, goal }) => {
         <Modal onClick={() => setSelectedRecipe(null)}>
           <ModalContent onClick={e => e.stopPropagation()}>
             <CloseButton onClick={() => setSelectedRecipe(null)}>×</CloseButton>
-            
             <div style={{ textAlign: 'center', fontSize: '64px', marginBottom: '20px' }}>
               {selectedRecipe.image}
             </div>
-            
             <h2 style={{ textAlign: 'center', color: '#333' }}>{selectedRecipe.name}</h2>
-            
             <NutritionTable>
-              <NutritionItem>
-                <span>Калории</span>
-                <span>{selectedRecipe.calories} ккал</span>
-              </NutritionItem>
-              <NutritionItem>
-                <span>Белки</span>
-                <span>{selectedRecipe.protein}г</span>
-              </NutritionItem>
-              <NutritionItem>
-                <span>Жиры</span>
-                <span>{selectedRecipe.fat}г</span>
-              </NutritionItem>
-              <NutritionItem>
-                <span>Углеводы</span>
-                <span>{selectedRecipe.carbs}г</span>
-              </NutritionItem>
-              <NutritionItem>
-                <span>Время</span>
-                <span>{selectedRecipe.time} мин</span>
-              </NutritionItem>
-              <NutritionItem>
-                <span>Сложность</span>
-                <span>{selectedRecipe.difficulty}</span>
-              </NutritionItem>
+              <NutritionItem><span>Калории</span><span>{selectedRecipe.calories} ккал</span></NutritionItem>
+              <NutritionItem><span>Белки</span><span>{selectedRecipe.protein}г</span></NutritionItem>
+              <NutritionItem><span>Жиры</span><span>{selectedRecipe.fat}г</span></NutritionItem>
+              <NutritionItem><span>Углеводы</span><span>{selectedRecipe.carbs}г</span></NutritionItem>
+              <NutritionItem><span>Время</span><span>{selectedRecipe.time} мин</span></NutritionItem>
+              <NutritionItem><span>Сложность</span><span>{selectedRecipe.difficulty}</span></NutritionItem>
             </NutritionTable>
-
-            <Section>
-              <h5>📝 Ингредиенты:</h5>
-              <IngredientList>
-                {selectedRecipe.ingredients.map((ing, index) => (
-                  <li key={index}>{ing}</li>
-                ))}
-              </IngredientList>
-            </Section>
-
+            <Section><h5>📝 Ингредиенты:</h5>
+              <IngredientList>{selectedRecipe.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}</IngredientList>
+           </Section>
             <Section>
               <h5>👨‍🍳 Приготовление:</h5>
               <InstructionList>
@@ -497,11 +347,9 @@ const RecipeDetails = ({ restrictions, goal }) => {
             </Section>
 
             <TagContainer>
-              {selectedRecipe.vegan && <Tag color="#e0f2e0" textColor="#4CAF50">🌱 Веганское блюдо</Tag>}
+              {selectedRecipe.vegan && <Tag color="#e0f2e0" textColor="#2E7D32">🌱 Веганское блюдо</Tag>}
               {selectedRecipe.allergies.map(allergy => (
-                <Tag key={allergy} color="#ffebee" textColor="#f44336">
-                  🚫 Содержит {allergy}
-                </Tag>
+                <Tag key={allergy} color="#ffebee" textColor="#f44336">🚫 Содержит {allergy}</Tag>
               ))}
             </TagContainer>
 

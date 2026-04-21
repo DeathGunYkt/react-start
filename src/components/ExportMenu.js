@@ -22,7 +22,7 @@ const ExportOptions = styled.div`
 `;
 
 const OptionCard = styled.div`
-  background: #f9f9f9;
+  background: #F5F5F5;
   padding: 20px;
   border-radius: 8px;
   text-align: center;
@@ -32,6 +32,7 @@ const OptionCard = styled.div`
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: white;
   }
   
   h4 {
@@ -53,7 +54,7 @@ const Icon = styled.div`
 const ShoppingList = styled.div`
   margin-top: 30px;
   padding: 20px;
-  background: #f9f9f9;
+  background: #F5F5F5;
   border-radius: 8px;
 `;
 
@@ -69,14 +70,14 @@ const ShoppingItem = styled.div`
   }
   
   span:last-child {
-    color: #4CAF50;
+    color: #2E7D32;
     font-weight: bold;
   }
 `;
 
 const Button = styled.button`
   padding: 12px 24px;
-  background: #4CAF50;
+  background: #2E7D32;
   color: white;
   border: none;
   border-radius: 8px;
@@ -85,7 +86,7 @@ const Button = styled.button`
   margin: 10px;
   
   &:hover {
-    background: #45a049;
+    background: #1B5E20;
   }
 `;
 

@@ -1,5 +1,3 @@
-// helpers.js - вспомогательные функции
-
 // Форматирование даты
 export const formatDate = (date) => {
   return new Date(date).toLocaleDateString('ru-RU', {
@@ -19,6 +17,7 @@ export const getDaysOfWeek = () => {
 
 // Расчет процента выполнения цели
 export const calculateProgress = (current, target) => {
+  if (!target || target === 0) return 0;
   return Math.min(100, Math.round((current / target) * 100));
 };
 

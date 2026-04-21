@@ -21,20 +21,20 @@ const DateNavigation = styled.div`
   align-items: center;
   margin-bottom: 20px;
   padding: 10px;
-  background: #f9f9f9;
+  background: #F5F5F5;
   border-radius: 8px;
 `;
 
 const DateButton = styled.button`
   padding: 8px 12px;
-  background: #4CAF50;
+  background: #2E7D32;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   
   &:hover {
-    background: #45a049;
+    background: #1B5E20;
   }
   
   &:disabled {
@@ -56,10 +56,10 @@ const MealGrid = styled.div`
 `;
 
 const MealCard = styled.div`
-  background: #f9f9f9;
+  background: #F5F5F5;
   padding: 15px;
   border-radius: 8px;
-  border-left: 4px solid ${props => props.color || '#4CAF50'};
+  border-left: 4px solid ${props => props.color || '#2E7D32'};
 `;
 
 const MealTitle = styled.h4`
@@ -81,7 +81,7 @@ const FoodItem = styled.div`
   cursor: pointer;
   
   &:hover {
-    background: #f0f0f0;
+    background: #F5F5F5;
   }
 `;
 
@@ -90,7 +90,7 @@ const FoodName = styled.span`
 `;
 
 const FoodCalories = styled.span`
-  color: #4CAF50;
+  color: #F57C00;
   font-weight: bold;
   margin: 0 10px;
 `;
@@ -107,35 +107,56 @@ const DeleteButton = styled.button`
   }
 `;
 
-const AddFoodForm = styled.form`
+const AddFoodForm = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-top: 15px;
+  flex-wrap: wrap;
 `;
 
 const FoodInput = styled.input`
-  flex: 1;
+  flex: 2;
+  min-width: 100px;
   padding: 8px;
   border: 2px solid #ddd;
   border-radius: 5px;
   font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #2E7D32;
+  }
+`;
+
+const CaloriesInput = styled.input`
+  width: 70px;
+  padding: 8px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #2E7D32;
+  }
 `;
 
 const AddButton = styled.button`
   padding: 8px 15px;
-  background: #4CAF50;
+  background: #2E7D32;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  font-weight: bold;
   
   &:hover {
-    background: #45a049;
+    background: #1B5E20;
   }
 `;
 
 const SummaryCard = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2E7D32 0%, #F57C00 100%);
   color: white;
   padding: 20px;
   border-radius: 8px;
@@ -163,17 +184,28 @@ const SummaryItem = styled.div`
 const FoodDiary = ({ userData, mealPlan }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [diaryEntries, setDiaryEntries] = useState({});
-  const [newFood, setNewFood] = useState({ meal: '', name: '', calories: '' });
+  
+  // Отдельное состояние для каждого приёма пищи
+  const [newFoodName, setNewFoodName] = useState({
+    breakfast: '',
+    lunch: '',
+    snack: '',
+    dinner: ''
+  });
+  const [newFoodCalories, setNewFoodCalories] = useState({
+    breakfast: '',
+    lunch: '',
+    snack: '',
+    dinner: ''
+  });
 
   useEffect(() => {
-    // Загружаем дневник из localStorage
     const saved = loadFromLocalStorage('foodDiary');
     if (saved) {
       setDiaryEntries(saved);
     }
   }, []);
 
-  // Сохраняем дневник при изменениях
   useEffect(() => {
     saveToLocalStorage('foodDiary', diaryEntries);
   }, [diaryEntries]);
@@ -190,9 +222,11 @@ const FoodDiary = ({ userData, mealPlan }) => {
     dinner: []
   };
 
-  const addFood = (e) => {
-    e.preventDefault();
-    if (!newFood.name || !newFood.calories) return;
+  const addFood = (mealType) => {
+    const name = newFoodName[mealType];
+    const calories = newFoodCalories[mealType];
+    
+    if (!name || !calories) return;
 
     const updated = { ...diaryEntries };
     if (!updated[currentDateKey]) {
@@ -204,14 +238,17 @@ const FoodDiary = ({ userData, mealPlan }) => {
       };
     }
 
-    updated[currentDateKey][newFood.meal].push({
+    updated[currentDateKey][mealType].push({
       id: Date.now(),
-      name: newFood.name,
-      calories: parseInt(newFood.calories)
+      name: name,
+      calories: parseInt(calories)
     });
 
     setDiaryEntries(updated);
-    setNewFood({ meal: '', name: '', calories: '' });
+    
+    // Очищаем только поля для этого приёма пищи
+    setNewFoodName({ ...newFoodName, [mealType]: '' });
+    setNewFoodCalories({ ...newFoodCalories, [mealType]: '' });
   };
 
   const removeFood = (meal, foodId) => {
@@ -228,28 +265,30 @@ const FoodDiary = ({ userData, mealPlan }) => {
     setSelectedDate(newDate);
   };
 
-  // Расчет статистики за день
   const calculateDailyStats = () => {
     let totalCalories = 0;
     let protein = 0, fat = 0, carbs = 0;
 
     Object.values(currentDayEntries).forEach(meals => {
-      meals.forEach(food => {
-        totalCalories += food.calories;
-        // Упрощенный расчет БЖУ (можно усложнить позже)
-        protein += Math.round(food.calories * 0.3 / 4);
-        fat += Math.round(food.calories * 0.3 / 9);
-        carbs += Math.round(food.calories * 0.4 / 4);
-      });
+      if (Array.isArray(meals)) {
+        meals.forEach(food => {
+          totalCalories += food.calories || 0;
+          protein += Math.round((food.calories || 0) * 0.3 / 4);
+          fat += Math.round((food.calories || 0) * 0.3 / 9);
+          carbs += Math.round((food.calories || 0) * 0.4 / 4);
+        });
+      }
     });
 
+    const goal = userData?.goal || 2000;
+    
     return {
       total: totalCalories,
       protein,
       fat,
       carbs,
-      remaining: userData.goal - totalCalories,
-      percentage: Math.round((totalCalories / userData.goal) * 100) || 0
+      remaining: goal - totalCalories,
+      percentage: Math.round((totalCalories / goal) * 100) || 0
     };
   };
 
@@ -257,8 +296,8 @@ const FoodDiary = ({ userData, mealPlan }) => {
 
   const meals = [
     { id: 'breakfast', name: 'Завтрак', color: '#FF9800', icon: '🍳' },
-    { id: 'lunch', name: 'Обед', color: '#4CAF50', icon: '🍲' },
-    { id: 'snack', name: 'Полдник', color: '#FFC107', icon: '🍎' },
+    { id: 'lunch', name: 'Обед', color: '#2E7D32', icon: '🍲' },
+    { id: 'snack', name: 'Полдник', color: '#F57C00', icon: '🍎' },
     { id: 'dinner', name: 'Ужин', color: '#2196F3', icon: '🍽️' }
   ];
 
@@ -279,7 +318,7 @@ const FoodDiary = ({ userData, mealPlan }) => {
         </SummaryItem>
         <SummaryItem>
           <h5>Осталось</h5>
-          <p>{stats.remaining} ккал</p>
+          <p>{stats.remaining > 0 ? stats.remaining : 0} ккал</p>
         </SummaryItem>
         <SummaryItem>
           <h5>Выполнено</h5>
@@ -288,45 +327,49 @@ const FoodDiary = ({ userData, mealPlan }) => {
       </SummaryCard>
 
       <MealGrid>
-        {meals.map(meal => (
-          <MealCard key={meal.id} color={meal.color}>
-            <MealTitle>
-              <span>{meal.icon} {meal.name}</span>
-              <span style={{ fontSize: '14px', color: '#666' }}>
-                {currentDayEntries[meal.id]?.reduce((sum, food) => sum + food.calories, 0) || 0} ккал
-              </span>
-            </MealTitle>
+        {meals.map(meal => {
+          const mealEntries = currentDayEntries[meal.id] || [];
+          const mealTotal = mealEntries.reduce((sum, food) => sum + (food.calories || 0), 0);
+          
+          return (
+            <MealCard key={meal.id} color={meal.color}>
+              <MealTitle>
+                <span>{meal.icon} {meal.name}</span>
+                <span style={{ fontSize: '14px', color: '#F57C00' }}>
+                  {mealTotal} ккал
+                </span>
+              </MealTitle>
 
-            {currentDayEntries[meal.id]?.map(food => (
-              <FoodItem key={food.id}>
-                <FoodName>{food.name}</FoodName>
-                <FoodCalories>{food.calories} ккал</FoodCalories>
-                <DeleteButton onClick={() => removeFood(meal.id, food.id)}>✕</DeleteButton>
-              </FoodItem>
-            ))}
+              {mealEntries.map(food => (
+                <FoodItem key={food.id}>
+                  <FoodName>{food.name}</FoodName>
+                  <FoodCalories>{food.calories} ккал</FoodCalories>
+                  <DeleteButton onClick={() => removeFood(meal.id, food.id)}>✕</DeleteButton>
+                </FoodItem>
+              ))}
 
-            <AddFoodForm onSubmit={addFood}>
-              <FoodInput
-                type="text"
-                placeholder="Название"
-                value={newFood.meal === meal.id ? newFood.name : ''}
-                onChange={(e) => setNewFood({ meal: meal.id, name: e.target.value, calories: newFood.calories })}
-              />
-              <FoodInput
-                type="number"
-                placeholder="ккал"
-                style={{ width: '80px' }}
-                value={newFood.meal === meal.id ? newFood.calories : ''}
-                onChange={(e) => setNewFood({ meal: meal.id, name: newFood.name, calories: e.target.value })}
-              />
-              <AddButton type="submit">+</AddButton>
-            </AddFoodForm>
-          </MealCard>
-        ))}
+              <AddFoodForm>
+                <FoodInput
+                  type="text"
+                  placeholder="Название блюда"
+                  value={newFoodName[meal.id]}
+                  onChange={(e) => setNewFoodName({ ...newFoodName, [meal.id]: e.target.value })}
+                />
+                <CaloriesInput
+                  type="number"
+                  placeholder="ккал"
+                  value={newFoodCalories[meal.id]}
+                  onChange={(e) => setNewFoodCalories({ ...newFoodCalories, [meal.id]: e.target.value })}
+                />
+                <AddButton onClick={() => addFood(meal.id)}>+ Добавить</AddButton>
+              </AddFoodForm>
+            </MealCard>
+          );
+        })}
       </MealGrid>
 
       <div style={{ textAlign: 'center', marginTop: '20px' }}>
-        <p>
+        <p style={{ color: '#666' }}>
           <strong>БЖУ за день:</strong> Белки: {stats.protein}г, 
           Жиры: {stats.fat}г, Углеводы: {stats.carbs}г
         </p>
