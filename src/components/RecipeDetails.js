@@ -275,10 +275,6 @@ const RecipeDetails = ({ restrictions, goal }) => {
     setFilteredRecipes(filtered);
   };
 
-  useEffect(() => {
-    filterRecipes();
-  }, [restrictions, goal, searchTerm]);
-
   return (
     <Container>
       <Title>Рецепты с деталями 🍳</Title>

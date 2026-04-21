@@ -580,11 +580,6 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
 
   // Определяем, какие вкладки доступны без авторизации
   const publicTabs = ['result', 'recommendations'];
-  
-  const isTabDisabled = (tabId) => {
-    return !publicTabs.includes(tabId) && !isLoggedIn;
-  };
-
   if (step === 2 && result) {
     const recommendations = getRecommendations(result.goal, result.restrictions);
     

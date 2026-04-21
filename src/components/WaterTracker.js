@@ -153,30 +153,22 @@ const WaterTracker = ({ userData }) => {
   };
 
   useEffect(() => {
-    const saved = loadFromLocalStorage('waterTracker');
-    if (saved) {
-      if (saved.date === new Date().toDateString()) {
-        setWaterIntake(saved.intake);
-      } else {
-        addToHistory(saved.intake, saved.date);
-        setWaterIntake(0);
-      }
-      setHistory(saved.history || []);
+  const saved = loadFromLocalStorage('waterTracker');
+  if (saved) {
+    if (saved.date === new Date().toDateString()) {
+      setWaterIntake(saved.intake);
+    } else {
+      addToHistory(saved.intake, saved.date);
+      setWaterIntake(0);
     }
+    setHistory(saved.history || []);
+  }
 
-    if (userData?.currentWeight) {
-      const calculatedGoal = Math.round(parseFloat(userData.currentWeight) * 35);
-      setDailyGoal(calculatedGoal);
-    }
-  }, [userData?.currentWeight]);
-
-  useEffect(() => {
-    saveToLocalStorage('waterTracker', {
-      intake: waterIntake,
-      date: new Date().toDateString(),
-      history
-    });
-  }, [waterIntake, history]);
+  if (userData?.currentWeight) {
+    const calculatedGoal = Math.round(parseFloat(userData.currentWeight) * 35);
+    setDailyGoal(calculatedGoal);
+  }
+}, [userData?.currentWeight, addToHistory]);
 
   const addWater = (amount) => {
     const newIntake = waterIntake + amount;
