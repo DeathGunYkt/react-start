@@ -5,7 +5,7 @@ import FoodDiary from './FoodDiary';
 import WaterTracker from './WaterTracker';
 import RecipeDetails from './RecipeDetails';
 import ExportMenu from './ExportMenu';
-import { FaUser, FaVenusMars, FaBullseye, FaBirthdayCake, FaRuler, FaWeight, FaTachometerAlt } from 'react-icons/fa';
+
 
 const Container = styled.div`
   max-width: 900px;
@@ -170,15 +170,15 @@ const HistoryItem = styled.div`
   }
 `;
 
-const TabContainer = styled.div`
+/*const TabContainer = styled.div`
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
   flex-wrap: wrap;
   justify-content: center;
-`;
+`; */
 
-const Tab = styled.button`
+/*const Tab = styled.button`
   padding: 10px 20px;
   background: ${props => props.active ? '#2E7D32' : '#f0f0f0'};
   color: ${props => props.active ? 'white' : '#333'};
@@ -199,7 +199,7 @@ const Tab = styled.button`
     }};
     transform: ${props => props.disabled ? 'none' : 'translateY(-2px)'};
   }
-`;
+`; */
 
 const RecommendationList = styled.ul`
   list-style: none;
@@ -322,11 +322,8 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
   const [mealPlan, setMealPlan] = useState(null);
 
   useEffect(() => {
-    const savedHistory = localStorage.getItem('calorieHistory');
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory));
-    }
-  }, []);
+  filterRecipes();
+}, [restrictions, goal, searchTerm, filterRecipes]);
 
   const saveToHistory = (data) => {
     const newHistory = [data, ...history].slice(0, 10);
@@ -640,9 +637,9 @@ const Questionnaire = ({ onResultCalculated, isLoggedIn = false }) => {
   // Определяем, какие вкладки доступны без авторизации
   const publicTabs = ['result', 'recommendations'];
   
-  const isTabDisabled = (tabId) => {
+  /*const isTabDisabled = (tabId) => {
     return !publicTabs.includes(tabId) && !isLoggedIn;
-  };
+  };*/
 
   if (step === 2 && result) {
     const recommendations = getRecommendations(result.goal, result.restrictions);

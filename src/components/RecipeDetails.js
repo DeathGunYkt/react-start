@@ -334,9 +334,12 @@ const RecipeDetails = ({ restrictions, goal }) => {
               <NutritionItem><span>Время</span><span>{selectedRecipe.time} мин</span></NutritionItem>
               <NutritionItem><span>Сложность</span><span>{selectedRecipe.difficulty}</span></NutritionItem>
             </NutritionTable>
-            <Section><h5>📝 Ингредиенты:</h5>
-              <IngredientList>{selectedRecipe.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}</IngredientList>
-           </Section>
+            <Section>
+              <h5>📝 Ингредиенты:</h5>
+              <IngredientList>
+                {selectedRecipe.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
+              </IngredientList>
+            </Section>
             <Section>
               <h5>👨‍🍳 Приготовление:</h5>
               <InstructionList>
